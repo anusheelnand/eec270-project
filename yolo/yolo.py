@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import argparse
 from glob import glob
+import torch
 
 from ultralytics import YOLO
 
@@ -14,6 +15,7 @@ def parse_arguments():
     arg_parsing = argparse.ArgumentParser()
     arg_parsing.add_argument('--img', type=str, required=True, nargs='+', help='Path to image(s)')
     arg_parsing.add_argument('--labels', type=str, required=True, help='Labels file')
+    arg_parsing.add_argument('--device', type=str, default='cpu', help='Device to run on (cpu/cuda)')
     cli_args = arg_parsing.parse_args()
     return cli_args
 
@@ -46,9 +48,13 @@ if __name__ == "__main__":
     cli_args = parse_arguments()
     load_images(cli_args)
     class_names = load_labels(cli_args)
+
+    device = torch.device(cli_args.device)
     model = YOLO("yolo11n.pt")
+    model.to(device)  # Move model to CPU
+
     for idx, file in enumerate(locations):
         # Calculating time using https://docs.opencv.org/4.x/dc/d71/tutorial_py_optimization.html
         image = cv2.imread(file)
-        results = model.predict(source=image, verbose=False)
+        results = model.predict(source=image, device=device, verbose=False)
         
